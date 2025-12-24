@@ -1,0 +1,16 @@
+[project]
+name = "openweight-llm-council"
+version = "0.1.0"
+description = "LLM Council using open-weight models from Ollama"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "httpx>=0.25.0",
+    "pydantic>=2.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
