@@ -3,6 +3,8 @@ Main FastAPI application for LLM Council.
 """
 
 import json
+import asyncio
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
@@ -11,7 +13,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from backend.config import COUNCIL_MODELS, CHAIRMAN_MODEL
+from backend.config import COUNCIL_MODELS, CHAIRMAN_MODEL, MAX_CONCURRENT_MODELS
 from backend.ollama_client import OllamaClient
 
 app = FastAPI(title="LLM Council")
@@ -44,6 +46,7 @@ class Response(BaseModel):
     stage2_reviews: Dict[str, Dict[str, Any]]
     stage3_final_response: str
     stage3_most_valuable_models: Optional[str] = None
+    duration_seconds: Optional[float] = None
     timestamp: str
 
 
@@ -78,27 +81,26 @@ async def generate_stage1_responses(query: str) -> Dict[str, str]:
     print(f"Stage 1: Getting responses from {len(COUNCIL_MODELS)} models...")
     
     system_prompt = "You are a helpful assistant. Provide thoughtful, accurate, and insightful responses."
+    semaphore = asyncio.Semaphore(MAX_CONCURRENT_MODELS)
     
-    tasks = []
-    for model in COUNCIL_MODELS:
-        task = ollama_client.generate(
-            model=model,
-            prompt=query,
-            system=system_prompt
-        )
-        tasks.append((model, task))
+    async def fetch_response(model):
+        async with semaphore:
+            try:
+                response = await ollama_client.generate(
+                    model=model,
+                    prompt=query,
+                    system=system_prompt
+                )
+                print(f"  ✓ {model} completed")
+                return model, response
+            except Exception as e:
+                print(f"  ✗ {model} failed: {e}")
+                return model, f"Error: {str(e)}"
+
+    tasks = [fetch_response(model) for model in COUNCIL_MODELS]
+    results = await asyncio.gather(*tasks)
     
-    responses = {}
-    for model, task in tasks:
-        try:
-            response = await task
-            responses[model] = response
-            print(f"  ✓ {model} completed")
-        except Exception as e:
-            print(f"  ✗ {model} failed: {e}")
-            responses[model] = f"Error: {str(e)}"
-    
-    return responses
+    return dict(results)
 
 
 async def generate_stage2_reviews(
@@ -137,29 +139,32 @@ Format your response as:
 Ranking: [Letter] (1st), [Letter] (2nd), [Letter] (3rd), etc.
 Explanation: [Your explanation]"""
 
-    reviews = {}
-    for model in COUNCIL_MODELS:
-        try:
-            review_text = await ollama_client.generate(
-                model=model,
-                prompt=review_prompt,
-                system="You are an expert evaluator of AI responses."
-            )
-            
-            # Parse the review (simple parsing, could be improved)
-            reviews[model] = {
-                "review_text": review_text,
-                "raw": review_text
-            }
-            print(f"  ✓ {model} review completed")
-        except Exception as e:
-            print(f"  ✗ {model} review failed: {e}")
-            reviews[model] = {
-                "review_text": f"Error: {str(e)}",
-                "raw": ""
-            }
+    semaphore = asyncio.Semaphore(MAX_CONCURRENT_MODELS)
+
+    async def fetch_review(model):
+        async with semaphore:
+            try:
+                review_text = await ollama_client.generate(
+                    model=model,
+                    prompt=review_prompt,
+                    system="You are an expert evaluator of AI responses."
+                )
+                print(f"  ✓ {model} review completed")
+                return model, {
+                    "review_text": review_text,
+                    "raw": review_text
+                }
+            except Exception as e:
+                print(f"  ✗ {model} review failed: {e}")
+                return model, {
+                    "review_text": f"Error: {str(e)}",
+                    "raw": ""
+                }
+
+    tasks = [fetch_review(model) for model in COUNCIL_MODELS]
+    results = await asyncio.gather(*tasks)
     
-    return reviews
+    return dict(results)
 
 
 async def generate_stage3_final_response(
@@ -320,6 +325,7 @@ Provide a final response that represents the best synthesis of the council's col
 async def process_query(request: QueryRequest):
     """Process a query through all three stages."""
     conversation_id = request.conversation_id or datetime.now().strftime("%Y%m%d_%H%M%S")
+    start_time = time.time()
     
     try:
         # Stage 1: Get initial responses
@@ -335,6 +341,8 @@ async def process_query(request: QueryRequest):
             stage2_reviews
         )
         
+        duration = time.time() - start_time
+        
         # Create response object
         response_data = {
             "conversation_id": conversation_id,
@@ -342,6 +350,7 @@ async def process_query(request: QueryRequest):
             "stage2_reviews": stage2_reviews,
             "stage3_final_response": stage3_final_response,
             "stage3_most_valuable_models": stage3_most_valuable,
+            "duration_seconds": round(duration, 2),
             "timestamp": datetime.now().isoformat()
         }
         

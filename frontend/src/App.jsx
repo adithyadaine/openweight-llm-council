@@ -58,7 +58,8 @@ function App() {
         if (!confirm('Are you sure you want to delete this conversation?')) return;
 
         try {
-            await fetch(`${API_BASE}/conversations/${id}`, { method: 'DELETE' });
+            const res = await fetch(`${API_BASE}/conversations/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Failed to delete conversation');
             setHistory(prev => prev.filter(h => h.id !== id));
             if (data?.conversation_id === id) {
                 setData(null);
@@ -120,22 +121,23 @@ function App() {
             <div className={`sidebar ${sidebarOpen ? '' : 'closed'}`}>
                 <div className="sidebar-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        {/* Professional Quorum Logo: Abstract Hex-Q */}
+                        {/* Assembly Logo: Central Node + Council Ring */}
                         <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <defs>
-                                <linearGradient id="logo-gradient" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
-                                    <stop stopColor="#3b82f6" />
-                                    <stop offset="1" stopColor="#06b6d4" />
-                                </linearGradient>
-                            </defs>
-                            {/* Outer Hexagon */}
-                            <path d="M16 2 L28.12 9 V23 L16 30 L3.88 23 V9 L16 2Z" stroke="url(#logo-gradient)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                            {/* Inner Core */}
-                            <circle cx="16" cy="16" r="5" fill="var(--accent-primary)" />
-                            {/* Tech accents */}
-                            <path d="M16 2 V6 M28.12 9 L24.66 11 M28.12 23 L24.66 21 M16 30 V26 M3.88 23 L7.34 21 M3.88 9 L7.34 11" stroke="url(#logo-gradient)" strokeWidth="1.5" strokeOpacity="0.5" />
+                            <g stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" opacity="0.6">
+                                <path d="M16 16 L16 6 M16 16 L24.66 11 M16 16 L24.66 21 M16 16 L16 26 M16 16 L7.34 21 M16 16 L7.34 11" />
+                                <circle cx="16" cy="16" r="10" strokeOpacity="0.3" strokeWidth="1" />
+                            </g>
+                            <circle cx="16" cy="16" r="4" fill="#3b82f6" />
+                            <g fill="#1e293b" stroke="#3b82f6" strokeWidth="1.5">
+                                <circle cx="16" cy="6" r="2.5" />
+                                <circle cx="24.66" cy="11" r="2.5" />
+                                <circle cx="24.66" cy="21" r="2.5" />
+                                <circle cx="16" cy="26" r="2.5" />
+                                <circle cx="7.34" cy="21" r="2.5" />
+                                <circle cx="7.34" cy="11" r="2.5" />
+                            </g>
                         </svg>
-                        <h2 className="sidebar-title" style={{ lineHeight: '1', paddingBottom: '2px' }}>Quorum</h2>
+                        <h2 className="sidebar-title" style={{ lineHeight: '1', paddingBottom: '2px' }}>LLM Council</h2>
                     </div>
                     <button style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }} onClick={() => setSidebarOpen(false)}>
                         <X size={20} />
@@ -178,7 +180,7 @@ function App() {
                 {loading ? (
                     <div className="loading-indicator">
                         <div className="spinner"></div>
-                        <p>Quorum is in session...</p>
+                        <p>The Council is in session...</p>
                         <div style={{ fontSize: '0.9rem', opacity: 0.6 }}>
                             Synthesizing council perspectives
                         </div>
@@ -193,20 +195,24 @@ function App() {
                             boxShadow: '0 0 40px rgba(124, 92, 255, 0.1)'
                         }}>
                             <svg width="44" height="44" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <defs>
-                                    <linearGradient id="logo-gradient-lg" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
-                                        <stop stopColor="#3b82f6" />
-                                        <stop offset="1" stopColor="#06b6d4" />
-                                    </linearGradient>
-                                </defs>
-                                <path d="M16 2 L28.12 9 V23 L16 30 L3.88 23 V9 L16 2Z" stroke="url(#logo-gradient-lg)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                <circle cx="16" cy="16" r="5" fill="var(--accent-primary)" />
-                                <path d="M16 2 V6 M28.12 9 L24.66 11 M28.12 23 L24.66 21 M16 30 V26 M3.88 23 L7.34 21 M3.88 9 L7.34 11" stroke="url(#logo-gradient-lg)" strokeWidth="1" strokeOpacity="0.5" />
+                                <g stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" opacity="0.6">
+                                    <path d="M16 16 L16 6 M16 16 L24.66 11 M16 16 L24.66 21 M16 16 L16 26 M16 16 L7.34 21 M16 16 L7.34 11" />
+                                    <circle cx="16" cy="16" r="10" strokeOpacity="0.3" strokeWidth="1" />
+                                </g>
+                                <circle cx="16" cy="16" r="4" fill="#3b82f6" />
+                                <g fill="#1e293b" stroke="#3b82f6" strokeWidth="1.5">
+                                    <circle cx="16" cy="6" r="2.5" />
+                                    <circle cx="24.66" cy="11" r="2.5" />
+                                    <circle cx="24.66" cy="21" r="2.5" />
+                                    <circle cx="16" cy="26" r="2.5" />
+                                    <circle cx="7.34" cy="21" r="2.5" />
+                                    <circle cx="7.34" cy="11" r="2.5" />
+                                </g>
                             </svg>
                         </div>
-                        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', marginBottom: '1rem' }}>Welcome to Quorum</h2>
+                        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', marginBottom: '1rem' }}>Welcome to the Council</h2>
                         <p style={{ maxWidth: '400px', margin: '0 auto', lineHeight: '1.6' }}>
-                            Submit a query to convene the council. Quorum synthesizes insights from multiple AI models to reach a definitive consensus.
+                            Submit a query to convene the council. The Council synthesizes insights from multiple AI models to reach a definitive consensus.
                         </p>
                     </div>
                 ) : (
@@ -217,6 +223,24 @@ function App() {
                             </span>
                             {data.query}
                         </h1>
+
+                        {data.duration_seconds && (
+                            <div style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontSize: '0.8rem',
+                                color: 'var(--accent-secondary)',
+                                background: 'rgba(6, 182, 212, 0.1)',
+                                padding: '2px 8px',
+                                borderRadius: '12px',
+                                marginBottom: '1.5rem',
+                                border: '1px solid rgba(6, 182, 212, 0.2)'
+                            }}>
+                                <Cpu size={12} />
+                                Generated in {data.duration_seconds}s
+                            </div>
+                        )}
 
                         <div className="tab-group">
                             <button
@@ -327,7 +351,7 @@ function App() {
                     <div className="input-container">
                         <textarea
                             className="query-input"
-                            placeholder="Ask Prism..."
+                            placeholder="Ask the Council..."
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             onKeyDown={handleKeyDown}

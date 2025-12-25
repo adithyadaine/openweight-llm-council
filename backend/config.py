@@ -21,3 +21,6 @@ OLLAMA_BASE_URL = "http://localhost:11434"
 
 # Timeout for API requests (in seconds)
 REQUEST_TIMEOUT = 300
+
+# Maximum number of models to run concurrently to prevent memory issues
+MAX_CONCURRENT_MODELS = 2
