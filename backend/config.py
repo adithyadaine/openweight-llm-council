@@ -1,23 +1,27 @@
 """
-Configuration for the LLM Council using Ollama models.
+Configuration for the LLM Council using Groq/OpenAI compatible models.
 """
 
-# List of models to use in the council (must be available in your Ollama installation)
-# Note: Gemma models require a tag (e.g., gemma:2b or gemma:7b)
+import os
+
 COUNCIL_MODELS = [
-    "llama3.2",
-    "mistral",
-    "qwen2.5",
-    "phi3",
-    "gemma:2b",  # Use gemma:7b for the 7B model
-    "deepseek-r1",
+    "llama-3.1-8b-instant",
+    "llama-3.3-70b-versatile",
+    "moonshotai/kimi-k2-instruct",
+    "qwen/qwen3-32b",
+    "meta-llama/llama-4-maverick-17b-128e-instruct",
+    "openai/gpt-oss-120b",
 ]
 
 # The model that will act as the Chairman and produce the final response
-CHAIRMAN_MODEL = "llama3.2"
+CHAIRMAN_MODEL = "llama-3.3-70b-versatile"
 
-# Ollama API endpoint (default is localhost:11434)
-OLLAMA_BASE_URL = "http://localhost:11434"
+# Groq API Configuration
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 
 # Timeout for API requests (in seconds)
 REQUEST_TIMEOUT = 300
+
+# Maximum number of models to run concurrently (Cloud handles this well, but let's keep it sane)
+MAX_CONCURRENT_MODELS = 10

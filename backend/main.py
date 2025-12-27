@@ -3,16 +3,23 @@ Main FastAPI application for LLM Council.
 """
 
 import json
+import asyncio
+import time
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, List
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from backend.config import COUNCIL_MODELS, CHAIRMAN_MODEL
-from backend.ollama_client import OllamaClient
+from backend.llm_client import LLMClient
+from backend.config import (
+    COUNCIL_MODELS,
+    CHAIRMAN_MODEL,
+    GROQ_BASE_URL,
+    MAX_CONCURRENT_MODELS
+)
 
 app = FastAPI(title="LLM Council")
 
@@ -29,8 +36,8 @@ app.add_middleware(
 DATA_DIR = Path("data/conversations")
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-# Initialize Ollama client
-ollama_client = OllamaClient()
+# Initialize client
+client = LLMClient()
 
 
 class QueryRequest(BaseModel):
@@ -38,72 +45,84 @@ class QueryRequest(BaseModel):
     conversation_id: Optional[str] = None
 
 
-class Response(BaseModel):
-    conversation_id: str
-    stage1_responses: Dict[str, str]
+class Turn(BaseModel):
+    turn_id: str
+    query: str
+    stage1_responses: Dict[str, Dict[str, Any]] # Changed from Dict[str, str] to support metadata
     stage2_reviews: Dict[str, Dict[str, Any]]
     stage3_final_response: str
     stage3_most_valuable_models: Optional[str] = None
+    duration_seconds: Optional[float] = None
     timestamp: str
+
+class Conversation(BaseModel):
+    id: str
+    turns: List[Turn]
+    created_at: str
+    last_updated: str
 
 
 @app.on_event("startup")
 async def startup():
-    """Check that required models are available."""
-    print("Checking Ollama models...")
-    available_models = await ollama_client.list_available_models()
-    if available_models:
-        print(f"Available models: {', '.join(available_models)}")
+    print("Checking Groq connection...")
+    try:
+        models = await client.list_available_models()
+        print(f"Available models: {', '.join(models)}")
+        
+        # Check if required models are available (optional strict check)
+        missing = []
+        for model in COUNCIL_MODELS:
+            # Simple check if model ID exists or we just proceed
+            pass # Groq availability changes, let's just proceed
+            
+    except Exception as e:
+        print(f"Startup warning: Could not list models ({str(e)}). Ensure GROQ_API_KEY is set.")
     
-    for model in COUNCIL_MODELS + [CHAIRMAN_MODEL]:
-        available = await ollama_client.check_model_available(model)
-        if not available:
-            # Try to find similar model names
-            similar = [m for m in available_models if model.lower() in m.lower() or m.lower().startswith(model.lower())]
-            if similar:
-                print(f"Warning: Model '{model}' not found, but similar models available: {', '.join(similar)}")
-            else:
-                print(f"Warning: Model '{model}' may not be available. Make sure it's installed with: ollama pull {model}")
     print("Startup complete.")
 
 
 @app.on_event("shutdown")
 async def shutdown():
     """Clean up resources."""
-    await ollama_client.close()
+    await client.close()
 
 
-async def generate_stage1_responses(query: str) -> Dict[str, str]:
+async def generate_stage1_responses(query: str) -> Dict[str, Dict[str, Any]]:
     """Stage 1: Get initial responses from all council models."""
     print(f"Stage 1: Getting responses from {len(COUNCIL_MODELS)} models...")
     
     system_prompt = "You are a helpful assistant. Provide thoughtful, accurate, and insightful responses."
+    semaphore = asyncio.Semaphore(MAX_CONCURRENT_MODELS)
     
-    tasks = []
-    for model in COUNCIL_MODELS:
-        task = ollama_client.generate(
-            model=model,
-            prompt=query,
-            system=system_prompt
-        )
-        tasks.append((model, task))
+    async def fetch_response(model):
+        async with semaphore:
+            try:
+                # client.generate now returns dict with content, usage, latency
+                result = await client.generate(
+                    model=model,
+                    prompt=query,
+                    system=system_prompt
+                )
+                print(f"  ✓ {model} completed")
+                return model, result
+            except Exception as e:
+                print(f"  ✗ {model} failed: {e}")
+                return model, {
+                    "content": f"Error: {str(e)}",
+                    "usage": {},
+                    "latency": 0,
+                    "error": str(e)
+                }
+
+    tasks = [fetch_response(model) for model in COUNCIL_MODELS]
+    results = await asyncio.gather(*tasks)
     
-    responses = {}
-    for model, task in tasks:
-        try:
-            response = await task
-            responses[model] = response
-            print(f"  ✓ {model} completed")
-        except Exception as e:
-            print(f"  ✗ {model} failed: {e}")
-            responses[model] = f"Error: {str(e)}"
-    
-    return responses
+    return dict(results)
 
 
 async def generate_stage2_reviews(
     query: str,
-    stage1_responses: Dict[str, str]
+    stage1_responses: Dict[str, Dict[str, Any]]
 ) -> Dict[str, Dict[str, Any]]:
     """Stage 2: Each model reviews and ranks other models' responses."""
     print(f"Stage 2: Getting reviews from {len(COUNCIL_MODELS)} models...")
@@ -111,12 +130,20 @@ async def generate_stage2_reviews(
     # Anonymize responses by assigning them letters
     anonymized = {}
     letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    for i, (model, response) in enumerate(stage1_responses.items()):
-        anonymized[letters[i]] = response
+    for i, (model, data) in enumerate(stage1_responses.items()):
+        
+        # Check if data is dict (new format) or str (legacy format during migration)
+        if isinstance(data, dict):
+            content = data.get("content", "")
+        else:
+            content = str(data)
+            
+        anonymized[letters[i]] = content
     
     # Create a prompt for reviewing
+    # Truncate responses to avoid rate limits (TPM) on smaller models
     responses_text = "\n\n".join([
-        f"Response {letter}:\n{response}"
+        f"Response {letter}:\n{response[:1500]}..." if len(response) > 1500 else f"Response {letter}:\n{response}"
         for letter, response in anonymized.items()
     ])
     
@@ -137,34 +164,46 @@ Format your response as:
 Ranking: [Letter] (1st), [Letter] (2nd), [Letter] (3rd), etc.
 Explanation: [Your explanation]"""
 
-    reviews = {}
-    for model in COUNCIL_MODELS:
-        try:
-            review_text = await ollama_client.generate(
-                model=model,
-                prompt=review_prompt,
-                system="You are an expert evaluator of AI responses."
-            )
-            
-            # Parse the review (simple parsing, could be improved)
-            reviews[model] = {
-                "review_text": review_text,
-                "raw": review_text
-            }
-            print(f"  ✓ {model} review completed")
-        except Exception as e:
-            print(f"  ✗ {model} review failed: {e}")
-            reviews[model] = {
-                "review_text": f"Error: {str(e)}",
-                "raw": ""
-            }
+    semaphore = asyncio.Semaphore(MAX_CONCURRENT_MODELS)
+
+    async def fetch_review(model):
+        async with semaphore:
+            try:
+                # client.generate returns dict, extract content
+                # Use lower max_tokens for reviews to save TPM budget
+                result = await client.generate(
+                    model=model,
+                    prompt=review_prompt,
+                    system="You are an expert evaluator of AI responses.",
+                    max_tokens=1024
+                )
+                review_text = result["content"]
+                
+                print(f"  ✓ {model} review completed")
+                return model, {
+                    "review_text": review_text,
+                    "raw": review_text,
+                    "usage": result.get("usage", {}),
+                    "latency": result.get("latency", 0)
+                }
+            except Exception as e:
+                print(f"  ✗ {model} review failed: {e}")
+                return model, {
+                    "review_text": f"Error: {str(e)}",
+                    "raw": "",
+                    "usage": {},
+                    "latency": 0
+                }
+
+    tasks = [fetch_review(model) for model in COUNCIL_MODELS]
+    results = await asyncio.gather(*tasks)
     
-    return reviews
+    return dict(results)
 
 
 async def generate_stage3_final_response(
     query: str,
-    stage1_responses: Dict[str, str],
+    stage1_responses: Dict[str, Dict[str, Any]], # Updated type
     stage2_reviews: Dict[str, Dict[str, Any]]
 ) -> Tuple[str, str]:
     """
@@ -174,15 +213,30 @@ async def generate_stage3_final_response(
     print(f"Stage 3: Chairman ({CHAIRMAN_MODEL}) compiling final response...")
     
     # Compile all responses and reviews
-    responses_text = "\n\n".join([
-        f"Response from {model}:\n{response}"
-        for model, response in stage1_responses.items()
-    ])
+    # Handle both dict (new) and str (legacy) for backward compatibility during migration
+    responses_list = []
+    for model, data in stage1_responses.items():
+        if isinstance(data, dict):
+            content = data.get("content", "")
+        else:
+            content = str(data)
+        # Truncate content for Chairman to safe limit
+        if len(content) > 3000:
+            content = content[:3000] + "..."
+        responses_list.append(f"Response from {model}:\n{content}")
+
+    responses_text = "\n\n".join(responses_list)
     
-    reviews_text = "\n\n".join([
-        f"Review from {model}:\n{review['review_text']}"
-        for model, review in stage2_reviews.items()
-    ])
+    # Truncate reviews as well
+    reviews_text = ""
+    if stage2_reviews:
+        reviews_list = []
+        for model, review in stage2_reviews.items():
+            r_text = review['review_text']
+            if len(r_text) > 1500:
+                r_text = r_text[:1500] + "..."
+            reviews_list.append(f"Review from {model}:\n{r_text}")
+        reviews_text = "\n\n".join(reviews_list)
     
     model_list = ", ".join(stage1_responses.keys())
     
@@ -220,11 +274,12 @@ IMPORTANT: You MUST format your response EXACTLY as follows:
 Provide a final response that represents the best synthesis of the council's collective wisdom, while being transparent about which models contributed most. Make sure to include the "Most Valuable Models" section at the end with the exact heading shown above."""
 
     try:
-        full_response = await ollama_client.generate(
+        result = await client.generate(
             model=CHAIRMAN_MODEL,
             prompt=chairman_prompt,
             system="You are the Chairman of an LLM Council, responsible for synthesizing multiple AI responses into a final, comprehensive answer while identifying the most valuable contributions."
         )
+        full_response = result["content"]
         print(f"  ✓ Chairman completed")
         
         # Parse the response to extract most valuable models and separate from main response
@@ -316,12 +371,59 @@ Provide a final response that represents the best synthesis of the council's col
         return f"Error generating final response: {str(e)}", "Error"
 
 
-@app.post("/api/query", response_model=Response)
+@app.post("/api/query", response_model=Turn)
 async def process_query(request: QueryRequest):
     """Process a query through all three stages."""
-    conversation_id = request.conversation_id or datetime.now().strftime("%Y%m%d_%H%M%S")
+    # Determine conversation ID: use existing or create new
+    conversation_id = request.conversation_id
+    if not conversation_id:
+        conversation_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    start_time = time.time()
     
     try:
+        # Load existing conversation or create new
+        file_path = DATA_DIR / f"{conversation_id}.json"
+        
+        if file_path.exists():
+            with open(file_path, "r") as f:
+                data = json.load(f)
+                # Check if it's the new format
+                if "turns" in data:
+                    conversation = Conversation(**data)
+                else:
+                    # Legacy migration: create clean conversation from old single-turn file
+                    # We might lose some context or just treat it as a new start for simplicity in this MVP
+                    # or try to convert. Let's start fresh if format doesn't match to avoid errors,
+                    # or better: migrate on the fly.
+                    # Legacy format: {"query":..., "conversation_id":..., ...}
+                    # Construct a Turn from legacy data
+                    logger_timestamp = data.get("timestamp", datetime.now().isoformat())
+                    legacy_turn = Turn(
+                        turn_id="legacy_1",
+                        query=data.get("query", ""),
+                        stage1_responses=data.get("stage1_responses", {}),
+                        stage2_reviews=data.get("stage2_reviews", {}),
+                        stage3_final_response=data.get("stage3_final_response", ""),
+                        stage3_most_valuable_models=data.get("stage3_most_valuable_models"),
+                        duration_seconds=data.get("duration_seconds"),
+                        timestamp=logger_timestamp
+                    )
+                    conversation = Conversation(
+                        id=conversation_id,
+                        turns=[legacy_turn],
+                        created_at=logger_timestamp,
+                        last_updated=logger_timestamp
+                    )
+        else:
+            now_str = datetime.now().isoformat()
+            conversation = Conversation(
+                id=conversation_id,
+                turns=[],
+                created_at=now_str,
+                last_updated=now_str
+            )
+
         # Stage 1: Get initial responses
         stage1_responses = await generate_stage1_responses(request.query)
         
@@ -329,31 +431,38 @@ async def process_query(request: QueryRequest):
         stage2_reviews = await generate_stage2_reviews(request.query, stage1_responses)
         
         # Stage 3: Get final response from chairman
+        # Context: Ideally we pass conversation history here. 
+        # For now, we keep it simple (context-free) as per plan.
         stage3_final_response, stage3_most_valuable = await generate_stage3_final_response(
             request.query,
             stage1_responses,
             stage2_reviews
         )
         
-        # Create response object
-        response_data = {
-            "conversation_id": conversation_id,
-            "stage1_responses": stage1_responses,
-            "stage2_reviews": stage2_reviews,
-            "stage3_final_response": stage3_final_response,
-            "stage3_most_valuable_models": stage3_most_valuable,
-            "timestamp": datetime.now().isoformat()
-        }
+        duration = time.time() - start_time
         
-        # Save to file
-        file_path = DATA_DIR / f"{conversation_id}.json"
+        # Create new turn
+        new_turn = Turn(
+            turn_id=f"turn_{len(conversation.turns) + 1}_{int(time.time())}",
+            query=request.query,
+            stage1_responses=stage1_responses,
+            stage2_reviews=stage2_reviews,
+            stage3_final_response=stage3_final_response,
+            stage3_most_valuable_models=stage3_most_valuable,
+            duration_seconds=round(duration, 2),
+            timestamp=datetime.now().isoformat()
+        )
+        
+        # Append and Save
+        conversation.turns.append(new_turn)
+        conversation.last_updated = new_turn.timestamp
+        
         with open(file_path, "w") as f:
-            json.dump({
-                "query": request.query,
-                **response_data
-            }, f, indent=2)
+            f.write(conversation.model_dump_json(indent=2))
         
-        return Response(**response_data)
+        # Return the new turn (frontend will append it)
+        # We return the Turn object directly. 
+        return new_turn
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -367,11 +476,25 @@ async def list_conversations():
         try:
             with open(file_path, "r") as f:
                 data = json.load(f)
-                conversations.append({
-                    "id": file_path.stem,
-                    "query": data.get("query", ""),
-                    "timestamp": data.get("timestamp", "")
-                })
+                
+                if "turns" in data and isinstance(data["turns"], list) and len(data["turns"]) > 0:
+                    # New format
+                    first_turn = data["turns"][0]
+                    last_turn = data["turns"][-1]
+                    conversations.append({
+                        "id": file_path.stem,
+                        "query": first_turn.get("query", ""),
+                        "turn_count": len(data["turns"]),
+                        "timestamp": last_turn.get("timestamp", "")
+                    })
+                else:
+                    # Legacy format
+                    conversations.append({
+                        "id": file_path.stem,
+                        "query": data.get("query", ""),
+                        "turn_count": 1,
+                        "timestamp": data.get("timestamp", "")
+                    })
         except Exception:
             continue
     
@@ -412,7 +535,7 @@ async def root():
 @app.get("/api/health")
 async def health():
     """Health check endpoint."""
-    return {"status": "ok", "ollama_url": ollama_client.base_url}
+    return {"status": "ok", "provider_url": client.base_url}
 
 
 if __name__ == "__main__":
