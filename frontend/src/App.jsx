@@ -372,21 +372,8 @@ function App() {
                 <div className="sidebar-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         {/* Assembly Logo */}
-                        <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <g stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" opacity="0.6">
-                                <path d="M16 16 L16 6 M16 16 L24.66 11 M16 16 L24.66 21 M16 16 L16 26 M16 16 L7.34 21 M16 16 L7.34 11" />
-                                <circle cx="16" cy="16" r="10" strokeOpacity="0.3" strokeWidth="1" />
-                            </g>
-                            <circle cx="16" cy="16" r="4" fill="#3b82f6" />
-                            <g fill="#1e293b" stroke="#3b82f6" strokeWidth="1.5">
-                                <circle cx="16" cy="6" r="2.5" />
-                                <circle cx="24.66" cy="11" r="2.5" />
-                                <circle cx="24.66" cy="21" r="2.5" />
-                                <circle cx="16" cy="26" r="2.5" />
-                                <circle cx="7.34" cy="21" r="2.5" />
-                                <circle cx="7.34" cy="11" r="2.5" />
-                            </g>
-                        </svg>
+                        {/* Assembly Logo */}
+                        <Logo size={28} />
                         <h2 className="sidebar-title" style={{ lineHeight: '1', paddingBottom: '2px' }}>LLM Council</h2>
                     </div>
                     <button style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', opacity: 0.7 }} onClick={() => setSidebarOpen(false)}>
@@ -476,21 +463,7 @@ function App() {
                             border: '1px solid var(--border-subtle)',
                             boxShadow: '0 0 40px rgba(124, 92, 255, 0.1)'
                         }}>
-                            <svg width="44" height="44" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <g stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" opacity="0.6">
-                                    <path d="M16 16 L16 6 M16 16 L24.66 11 M16 16 L24.66 21 M16 16 L16 26 M16 16 L7.34 21 M16 16 L7.34 11" />
-                                    <circle cx="16" cy="16" r="10" strokeOpacity="0.3" strokeWidth="1" />
-                                </g>
-                                <circle cx="16" cy="16" r="4" fill="#3b82f6" />
-                                <g fill="#1e293b" stroke="#3b82f6" strokeWidth="1.5">
-                                    <circle cx="16" cy="6" r="2.5" />
-                                    <circle cx="24.66" cy="11" r="2.5" />
-                                    <circle cx="24.66" cy="21" r="2.5" />
-                                    <circle cx="16" cy="26" r="2.5" />
-                                    <circle cx="7.34" cy="21" r="2.5" />
-                                    <circle cx="7.34" cy="11" r="2.5" />
-                                </g>
-                            </svg>
+                            <Logo size={44} />
                         </div>
                         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', marginBottom: '1rem' }}>Welcome to the Council</h2>
                         <p style={{ maxWidth: '400px', margin: '0 auto', lineHeight: '1.6' }}>
@@ -539,9 +512,48 @@ function App() {
                     </div>
                 </div>
 
+                {/* Footer */}
+                <Footer />
+
             </div>
-        </div>
+        </div >
     );
 }
+
+// --- Icons / Components ---
+const Logo = ({ size = 28 }) => (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" opacity="0.6">
+            <path d="M16 16 L16 6 M16 16 L24.66 11 M16 16 L24.66 21 M16 16 L16 26 M16 16 L7.34 21 M16 16 L7.34 11" />
+            <circle cx="16" cy="16" r="10" strokeOpacity="0.3" strokeWidth="1" />
+        </g>
+        <circle cx="16" cy="16" r="4" fill="#3b82f6" />
+        <g fill="#1e293b" stroke="#3b82f6" strokeWidth="1.5">
+            <circle cx="16" cy="6" r="2.5" />
+            <circle cx="24.66" cy="11" r="2.5" />
+            <circle cx="24.66" cy="21" r="2.5" />
+            <circle cx="16" cy="26" r="2.5" />
+            <circle cx="7.34" cy="21" r="2.5" />
+            <circle cx="7.34" cy="11" r="2.5" />
+        </g>
+    </svg>
+);
+
+const Footer = () => {
+    return (
+        <footer className="app-footer">
+            <div className="footer-left">
+                <Logo size={20} />
+                <span style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>LLM Council</span>
+                <span style={{ opacity: 0.3 }}>|</span>
+                <span>© 2025</span>
+            </div>
+            <div className="footer-right">
+                <a href="#" className="footer-link">About</a>
+                <a href="#" className="footer-link">Privacy</a>
+            </div>
+        </footer>
+    );
+};
 
 export default App;
