@@ -265,6 +265,15 @@ function App() {
                 setConversation(json);
             }
 
+            // setData was removed in favor of setConversation in the new branch logic?
+            // Checking imports/state... setData is NOT in specific conflict block but "data" variable usage replaced by "conversation.turns.map".
+            // So we just need to set the conversation state.
+
+            // setActiveTab and others might need adjustment if they depend on flattened "data" state
+            // But looking at CouncilTurn component, it handles tabs internally per turn.
+            // So we don't need top-level activeTab state anymore for the main view.
+
+            setLoading(false);
             setLoading(false);
             setSidebarOpen(false); // Close mobile sidebar
         } catch (err) {
@@ -442,8 +451,15 @@ function App() {
                         <div key={item.id} className={`sidebar-item ${conversation?.id === item.id ? 'active' : ''}`} onClick={() => loadConversation(item.id)}>
                             <div style={{ overflow: 'hidden' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                    <MessageSquare size={14} />
-                                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    <div style={{ flexShrink: 0, display: 'flex' }}>
+                                        <MessageSquare size={14} />
+                                    </div>
+                                    <span style={{
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        flex: 1
+                                    }}>
                                         {item.query}
                                     </span>
                                 </div>

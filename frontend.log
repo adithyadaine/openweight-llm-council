@@ -3,7 +3,15 @@
 > vite
 
 
+<<<<<<< HEAD
   VITE v4.5.14  ready in 100 ms
 
   ➜  Local:   http://localhost:5173/
   ➜  Network: use --host to expose
+=======
+  VITE v4.5.14  ready in 97 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+10:37:05 PM [vite] hmr update /src/App.jsx
+>>>>>>> 7776767 (bug: issues with the menu and the chat convo logo rectified.)

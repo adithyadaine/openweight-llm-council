@@ -94,8 +94,10 @@ body {
   top: 1.5rem;
   left: 1.5rem;
   z-index: 50;
-  background: transparent;
-  border: none;
+  background: rgba(15, 17, 21, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
   cursor: pointer;
   padding: 0.5rem;
@@ -227,8 +229,7 @@ body {
 .stage-content {
   flex: 1;
   overflow-y: auto;
-  padding: 2rem;
-  padding-bottom: 8rem; /* Space for input */
+  padding: 5rem 2rem 8rem 2rem; /* Top padding clears sidebar toggle */
 }
 
 /* Response Cards */
