@@ -477,18 +477,19 @@ async def list_conversations():
             with open(file_path, "r") as f:
                 data = json.load(f)
                 
+                # Handle new 'turns' structure
                 if "turns" in data and isinstance(data["turns"], list) and len(data["turns"]) > 0:
-                    # New format
+                    # New format: get the last turn for the query and timestamp
                     first_turn = data["turns"][0]
                     last_turn = data["turns"][-1]
                     conversations.append({
                         "id": file_path.stem,
-                        "query": first_turn.get("query", ""),
+                        "query": last_turn.get("query", "") or first_turn.get("query", ""),
                         "turn_count": len(data["turns"]),
-                        "timestamp": last_turn.get("timestamp", "")
+                        "timestamp": last_turn.get("timestamp", data.get("created_at", ""))
                     })
+                # Handle legacy flat structure
                 else:
-                    # Legacy format
                     conversations.append({
                         "id": file_path.stem,
                         "query": data.get("query", ""),
