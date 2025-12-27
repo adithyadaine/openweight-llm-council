@@ -4,18 +4,15 @@
 
 echo "Starting LLM Council..."
 
-# Check if Ollama is running
-if ! curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
-    echo "Warning: Ollama doesn't seem to be running on localhost:11434"
-    echo "Please make sure Ollama is installed and running."
-    echo "You can start it with: ollama serve"
-    echo ""
-    read -p "Continue anyway? (y/n) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
-    fi
+# Load environment variables from .env if it exists
+if [ -f .env ]; then
+    echo "Loading environment variables from .env..."
+    set -a
+    source .env
+    set +a
 fi
+
+
 
 # Determine Python command
 PYTHON_CMD=""

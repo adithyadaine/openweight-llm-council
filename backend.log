@@ -1,18 +1,44 @@
-/Users/daine/Developer/WIP/openweight-llm-council/backend/main.py:53: DeprecationWarning: 
+/Users/daine/Developer/WIP/openweight-llm-council/backend/main.py:65: DeprecationWarning: 
         on_event is deprecated, use lifespan event handlers instead.
 
         Read more about it in the
         [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
         
   @app.on_event("startup")
-/Users/daine/Developer/WIP/openweight-llm-council/backend/main.py:73: DeprecationWarning: 
+/Users/daine/Developer/WIP/openweight-llm-council/backend/main.py:84: DeprecationWarning: 
         on_event is deprecated, use lifespan event handlers instead.
 
         Read more about it in the
         [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
         
   @app.on_event("shutdown")
-INFO:     Started server process [55692]
+INFO:     Started server process [35577]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+Checking Groq connection...
+Available models: meta-llama/llama-guard-4-12b, playai-tts-arabic, openai/gpt-oss-120b, whisper-large-v3, groq/compound-mini, groq/compound, whisper-large-v3-turbo, openai/gpt-oss-20b, meta-llama/llama-prompt-guard-2-86m, moonshotai/kimi-k2-instruct, qwen/qwen3-32b, canopylabs/orpheus-arabic-saudi, openai/gpt-oss-safeguard-20b, canopylabs/orpheus-v1-english, llama-3.3-70b-versatile, meta-llama/llama-4-maverick-17b-128e-instruct, llama-3.1-8b-instant, meta-llama/llama-4-scout-17b-16e-instruct, allam-2-7b, moonshotai/kimi-k2-instruct-0905, meta-llama/llama-prompt-guard-2-22m, playai-tts
+Startup complete.
+INFO:     127.0.0.1:54101 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54117 - "GET /api/conversations HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54117 - "GET /api/conversations HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54119 - "GET /api/conversations/20251226_215556 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54183 - "OPTIONS /api/query HTTP/1.1" 200 OK
+Stage 1: Getting responses from 6 models...
+  ✓ meta-llama/llama-4-maverick-17b-128e-instruct completed
+  ✓ llama-3.1-8b-instant completed
+  ✓ llama-3.3-70b-versatile completed
+  ✓ qwen/qwen3-32b completed
+  ✓ moonshotai/kimi-k2-instruct completed
+  ✓ openai/gpt-oss-120b completed
+Stage 2: Getting reviews from 6 models...
+  ✓ meta-llama/llama-4-maverick-17b-128e-instruct review completed
+  ✓ llama-3.1-8b-instant review completed
+  ✓ llama-3.3-70b-versatile review completed
+  ✓ moonshotai/kimi-k2-instruct review completed
+  ✓ openai/gpt-oss-120b review completed
+  ✓ qwen/qwen3-32b review completed
+Stage 3: Chairman (llama-3.3-70b-versatile) compiling final response...
+  ✓ Chairman completed
+INFO:     127.0.0.1:54183 - "POST /api/query HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54183 - "GET /api/conversations HTTP/1.1" 200 OK
