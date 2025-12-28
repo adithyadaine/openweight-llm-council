@@ -3,15 +3,65 @@
 > vite
 
 
-<<<<<<< HEAD
-  VITE v4.5.14  ready in 100 ms
+  VITE v4.5.14  ready in 96 ms
 
   ➜  Local:   http://localhost:5173/
   ➜  Network: use --host to expose
-=======
-  VITE v4.5.14  ready in 97 ms
-
-  ➜  Local:   http://localhost:5173/
-  ➜  Network: use --host to expose
-10:37:05 PM [vite] hmr update /src/App.jsx
->>>>>>> 7776767 (bug: issues with the menu and the chat convo logo rectified.)
+8:13:18 PM [vite] page reload src/main.jsx
+8:13:18 PM [vite] hmr update /src/App.jsx
+8:13:18 PM [vite] hmr update /src/components/SettingsMenu.jsx
+8:13:18 PM [vite] hmr update /src/App.jsx
+8:13:18 PM [vite] hmr update /src/components/UserProfile.jsx
+8:13:18 PM [vite] hmr update /src/components/Login.jsx
+8:13:18 PM [vite] Internal server error: Failed to resolve import "./components/Login" from "src/App.jsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/daine/Developer/WIP/openweight-llm-council/frontend/src/App.jsx:16:18
+  31 |  } from "lucide-react";
+  32 |  import "./index.css";
+  33 |  import Login from "./components/Login";
+     |                     ^
+  34 |  import UserProfile from "./components/UserProfile";
+  35 |  import SettingsMenu from "./components/SettingsMenu";
+      at formatError (file:///Users/daine/Developer/WIP/openweight-llm-council/frontend/node_modules/vite/dist/node/chunks/dep-827b23df.js:44066:46)
+      at TransformContext.error (file:///Users/daine/Developer/WIP/openweight-llm-council/frontend/node_modules/vite/dist/node/chunks/dep-827b23df.js:44062:19)
+      at normalizeUrl (file:///Users/daine/Developer/WIP/openweight-llm-council/frontend/node_modules/vite/dist/node/chunks/dep-827b23df.js:41845:33)
+      at processTicksAndRejections (node:internal/process/task_queues:96:5)
+      at async file:///Users/daine/Developer/WIP/openweight-llm-council/frontend/node_modules/vite/dist/node/chunks/dep-827b23df.js:41999:47
+      at async Promise.all (index 7)
+      at async TransformContext.transform (file:///Users/daine/Developer/WIP/openweight-llm-council/frontend/node_modules/vite/dist/node/chunks/dep-827b23df.js:41915:13)
+      at async Object.transform (file:///Users/daine/Developer/WIP/openweight-llm-council/frontend/node_modules/vite/dist/node/chunks/dep-827b23df.js:44356:30)
+      at async loadAndTransform (file:///Users/daine/Developer/WIP/openweight-llm-council/frontend/node_modules/vite/dist/node/chunks/dep-827b23df.js:55088:29)
+      at async viteTransformMiddleware (file:///Users/daine/Developer/WIP/openweight-llm-council/frontend/node_modules/vite/dist/node/chunks/dep-827b23df.js:64699:32)
+Failed to resolve import "./components/Login" from "src/App.jsx". Does the file exist?
+Failed to resolve import "./components/Login" from "src/App.jsx". Does the file exist?
+8:13:18 PM [vite] page reload src/main.jsx
+8:13:18 PM [vite] hmr update /src/components/SettingsMenu.jsx
+8:13:18 PM [vite] hmr update /src/index.css
+8:13:18 PM [vite] page reload src/App.jsx
+8:13:18 PM [vite] hmr update /src/index.css
+8:13:18 PM [vite] page reload src/App.jsx
+8:13:18 PM [vite] hmr update /src/components/SettingsMenu.jsx
+Failed to resolve import "./components/Login" from "src/App.jsx". Does the file exist?
+Failed to resolve import "./components/Login" from "src/App.jsx". Does the file exist?
+8:13:19 PM [vite] Internal server error: Failed to resolve import "./components/Login" from "src/App.jsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/daine/Developer/WIP/openweight-llm-council/frontend/src/App.jsx:16:18
+  31 |  } from "lucide-react";
+  32 |  import "./index.css";
+  33 |  import Login from "./components/Login";
+     |                     ^
+  34 |  const API_BASE = "http://localhost:8000/api";
+  35 |  const extractResponseData = (data) => {
+      at formatError (file:///Users/daine/Developer/WIP/openweight-llm-council/frontend/node_modules/vite/dist/node/chunks/dep-827b23df.js:44066:46)
+      at TransformContext.error (file:///Users/daine/Developer/WIP/openweight-llm-council/frontend/node_modules/vite/dist/node/chunks/dep-827b23df.js:44062:19)
+      at normalizeUrl (file:///Users/daine/Developer/WIP/openweight-llm-council/frontend/node_modules/vite/dist/node/chunks/dep-827b23df.js:41845:33)
+      at processTicksAndRejections (node:internal/process/task_queues:96:5)
+      at async file:///Users/daine/Developer/WIP/openweight-llm-council/frontend/node_modules/vite/dist/node/chunks/dep-827b23df.js:41999:47
+      at async Promise.all (index 7)
+      at async TransformContext.transform (file:///Users/daine/Developer/WIP/openweight-llm-council/frontend/node_modules/vite/dist/node/chunks/dep-827b23df.js:41915:13)
+      at async Object.transform (file:///Users/daine/Developer/WIP/openweight-llm-council/frontend/node_modules/vite/dist/node/chunks/dep-827b23df.js:44356:30)
+      at async loadAndTransform (file:///Users/daine/Developer/WIP/openweight-llm-council/frontend/node_modules/vite/dist/node/chunks/dep-827b23df.js:55088:29)
+      at async viteTransformMiddleware (file:///Users/daine/Developer/WIP/openweight-llm-council/frontend/node_modules/vite/dist/node/chunks/dep-827b23df.js:64699:32)
+8:13:19 PM [vite] page reload src/App.jsx
+8:13:19 PM [vite] hmr update /src/components/UserProfile.jsx
+8:13:19 PM [vite] hmr update /src/App.jsx
