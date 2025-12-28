@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple, List
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -21,7 +22,33 @@ from backend.config import (
     MAX_CONCURRENT_MODELS
 )
 
-app = FastAPI(title="LLM Council")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup logic
+    print("Checking Groq connection...")
+    try:
+        models = await client.list_available_models()
+        print(f"Available models: {', '.join(models)}")
+        
+        # Check if required models are available (optional strict check)
+        missing = []
+        for model in COUNCIL_MODELS:
+            # Simple check if model ID exists or we just proceed
+            pass # Groq availability changes, let's just proceed
+            
+    except Exception as e:
+        print(f"Startup warning: Could not list models ({str(e)}). Ensure GROQ_API_KEY is set.")
+    
+    print("Startup complete.")
+    
+    yield
+    
+    # Shutdown logic
+    print("Shutting down...")
+    await client.close()
+
+
+app = FastAPI(title="LLM Council", lifespan=lifespan)
 
 # CORS middleware to allow frontend to connect
 app.add_middleware(
@@ -62,29 +89,6 @@ class Conversation(BaseModel):
     last_updated: str
 
 
-@app.on_event("startup")
-async def startup():
-    print("Checking Groq connection...")
-    try:
-        models = await client.list_available_models()
-        print(f"Available models: {', '.join(models)}")
-        
-        # Check if required models are available (optional strict check)
-        missing = []
-        for model in COUNCIL_MODELS:
-            # Simple check if model ID exists or we just proceed
-            pass # Groq availability changes, let's just proceed
-            
-    except Exception as e:
-        print(f"Startup warning: Could not list models ({str(e)}). Ensure GROQ_API_KEY is set.")
-    
-    print("Startup complete.")
-
-
-@app.on_event("shutdown")
-async def shutdown():
-    """Clean up resources."""
-    await client.close()
 
 
 async def generate_stage1_responses(query: str) -> Dict[str, Dict[str, Any]]:
