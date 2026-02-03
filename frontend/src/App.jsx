@@ -265,15 +265,6 @@ function App() {
                 setConversation(json);
             }
 
-            // setData was removed in favor of setConversation in the new branch logic?
-            // Checking imports/state... setData is NOT in specific conflict block but "data" variable usage replaced by "conversation.turns.map".
-            // So we just need to set the conversation state.
-
-            // setActiveTab and others might need adjustment if they depend on flattened "data" state
-            // But looking at CouncilTurn component, it handles tabs internally per turn.
-            // So we don't need top-level activeTab state anymore for the main view.
-
-            setLoading(false);
             setLoading(false);
             setSidebarOpen(false); // Close mobile sidebar
         } catch (err) {
@@ -501,11 +492,10 @@ function App() {
                                 </div>
                             </div>
                         )}
+                        {/* Scroll Anchor */}
+                        <div ref={bottomRef}></div>
                     </div>
                 )}
-
-                {/* Scroll Anchor */}
-                <div ref={bottomRef}></div>
 
                 {/* Input Area */}
                 <div className="input-area">

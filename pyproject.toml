@@ -1,7 +1,7 @@
 [project]
 name = "openweight-llm-council"
 version = "0.1.0"
-description = "LLM Council using open-weight models from Ollama"
+description = "LLM Council using open-weight models via Groq API"
 requires-python = ">=3.10"
 dependencies = [
     "fastapi>=0.104.0",
